@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brainwave Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Cinzel:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #030508;
+  --panel: #070c13;
+  --panel2: #0a1018;
+  --border: rgba(255,255,255,0.055);
+  --muted: #2e3e4e;
+  --dim: #4a6a7a;
+  --text: #b8ccd8;
+}
+
+html, body { height: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 5rem;
+}
+
+/* Stars */
+#stars { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+/* Layout */
+.wrap {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 820px;
+  padding: 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+/* Header */
+.hdr {
+  text-align: center;
+  padding: 2.5rem 1rem 1rem;
+}
+.hdr-eye {
+  font-size: 0.55rem;
+  letter-spacing: 0.4em;
+  color: var(--dim);
+  text-transform: uppercase;
+  margin-bottom: 0.8rem;
+}
+h1 {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(1.5rem, 5vw, 2.6rem);
+  font-weight: 300;
+  letter-spacing: 0.12em;
+  color: #ddeeff;
+  margin-bottom: 0.5rem;
+}
+.hdr-sub {
+  font-size: 0.58rem;
+  color: var(--dim);
+  letter-spacing: 0.15em;
+  line-height: 2;
+}
+
+/* Wave selector tabs */
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.tab {
+  background: var(--panel);
+  padding: 1rem 0.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.25s;
+  position: relative;
+}
+
+.tab:hover { background: var(--panel2); }
+.tab.active { background: var(--panel2); }
+.tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--c);
+}
+
+.tab-name {
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
+  color: var(--c);
+  letter-spacing: 0.1em;
+  margin-bottom: 0.25rem;
+}
+.tab-range {
+  font-size: 0.5rem;
+  letter-spacing: 0.15em;
+  color: var(--dim);
+}
+
+/* Main panel — live wave + detail */
+.main-panel {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.2rem;
+}
+
+/* Live canvas */
+.wave-box {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+#waveCanvas { display: block; width: 100%; height: 100px; }
+.wave-box-label {
+  position: absolute; top: 9px; left: 12px;
+  font-size: 0.5rem; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase;
+}
+.wave-hz-live {
+  position: absolute; top: 9px; right: 12px;
+  font-size: 0.75rem; letter-spacing: 0.1em;
+  transition: color 0.4s;
+}
+
+/* Hz slider panel */
+.slider-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1.5rem 1.5rem 1.8rem;
+}
+
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 1.2rem;
+}
+
+.slider-title {
+  font-size: 0.55rem;
+  letter-spacing: 0.25em;
+  color: var(--dim);
+  text-transform: uppercase;
+}
+
+.slider-current-hz {
+  font-family: 'Cinzel', serif;
+  font-size: 1.8rem;
+  font-weight: 300;
+  line-height: 1;
+  transition: color 0.4s;
+}
+.slider-current-hz span { font-size: 0.7rem; font-family: 'Share Tech Mono'; opacity: 0.5; }
+
+/* Custom range track */
+.slider-wrap {
+  position: relative;
+  margin-bottom: 0.6rem;
+}
+
+.hz-range {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 3px;
+  outline: none;
+  cursor: pointer;
+  border-radius: 2px;
+  background: var(--muted);
+  position: relative;
+  z-index: 2;
+}
+.hz-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(255,255,255,0.3);
+  transition: box-shadow 0.2s;
+}
+.hz-range::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 16px rgba(255,255,255,0.5);
+}
+
+/* Sub-level markers */
+.level-markers {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.6rem;
+}
+.level-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  transition: opacity 0.3s;
+  flex: 1;
+}
+.level-marker:hover { opacity: 1 !important; }
+.marker-tick {
+  width: 1px;
+  height: 8px;
+  background: currentColor;
+  opacity: 0.4;
+}
+.marker-hz {
+  font-size: 0.48rem;
+  letter-spacing: 0.05em;
+  opacity: 0.5;
+}
+
+/* Level info card */
+.level-card {
+  margin-top: 1.2rem;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1.2rem 1.4rem;
+  min-height: 110px;
+  transition: border-color 0.4s;
+  position: relative;
+  overflow: hidden;
+}
+.level-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  transition: background 0.4s;
+}
+.level-name {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  font-weight: 300;
+  margin-bottom: 0.4rem;
+  transition: color 0.4s;
+}
+.level-hz-range-label {
+  font-size: 0.52rem;
+  letter-spacing: 0.2em;
+  color: var(--dim);
+  margin-bottom: 0.9rem;
+  text-transform: uppercase;
+}
+.level-desc {
+  font-size: 0.72rem;
+  line-height: 1.85;
+  color: #7a9aaa;
+}
+
+/* When to use panel */
+.when-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1.4rem 1.5rem;
+}
+
+.when-title {
+  font-size: 0.52rem;
+  letter-spacing: 0.3em;
+  color: var(--dim);
+  text-transform: uppercase;
+  margin-bottom: 1.2rem;
+}
+
+.when-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.8rem;
+}
+
+.when-item {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1rem;
+  transition: border-color 0.4s;
+}
+
+.when-time {
+  font-size: 0.52rem;
+  letter-spacing: 0.2em;
+  color: var(--dim);
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+}
+
+.when-use {
+  font-size: 0.68rem;
+  line-height: 1.7;
+  color: #8aaabb;
+}
+
+/* Controls bar */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1rem 1.4rem;
+  flex-wrap: wrap;
+}
+
+.play-btn {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 1px solid var(--dim);
+  color: var(--text);
+  padding: 0.65rem 1.6rem;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+.play-btn:hover { border-color: var(--text); }
+.play-btn.playing { border-color: #00ccaa; color: #00ccaa; }
+
+.vol-wrap { display: flex; align-items: center; gap: 0.7rem; flex: 1; }
+.vol-label { font-size: 0.52rem; letter-spacing: 0.2em; color: var(--dim); text-transform: uppercase; white-space: nowrap; }
+
+input[type=range].vol-slider {
+  -webkit-appearance: none;
+  flex: 1; height: 1px;
+  background: var(--muted);
+  outline: none; cursor: pointer; min-width: 60px;
+}
+input[type=range].vol-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px; height: 10px;
+  border-radius: 50%; background: var(--text); cursor: pointer;
+}
+
+.timer { font-size: 0.6rem; color: var(--dim); letter-spacing: 0.1em; min-width: 44px; text-align: right; }
+
+/* Headphone notice */
+.hp-notice {
+  text-align: center;
+  font-size: 0.52rem;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+  text-transform: uppercase;
+  animation: glow-pulse 4s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.75; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="stars"></canvas>
+
+<div class="hdr">
+  <p class="hdr-eye">Neural Frequency Laboratory</p>
+  <h1>Brainwave Portal</h1>
+  <p class="hdr-sub">Select a wave · drag the Hz meter · hear the exact frequency<br>Headphones required for binaural effect</p>
+</div>
+
+<div class="wrap">
+
+  <!-- Tabs -->
+  <div class="tabs" id="tabs"></div>
+
+  <!-- Live wave -->
+  <div class="wave-box">
+    <span class="wave-box-label">live output</span>
+    <span class="wave-hz-live" id="hzLive">— Hz</span>
+    <canvas id="waveCanvas"></canvas>
+  </div>
+
+  <!-- Hz slider + level info -->
+  <div class="slider-panel">
+    <div class="slider-header">
+      <span class="slider-title">Frequency Dial</span>
+      <div class="slider-current-hz" id="sliderHz">—<span> Hz</span></div>
+    </div>
+    <div class="slider-wrap">
+      <input type="range" class="hz-range" id="hzRange" min="0" max="100" value="50">
+    </div>
+    <div class="level-markers" id="levelMarkers"></div>
+    <div class="level-card" id="levelCard">
+      <p style="font-size:0.6rem;color:var(--dim);letter-spacing:0.15em">Select a wave above to begin</p>
+    </div>
+  </div>
+
+  <!-- When to use -->
+  <div class="when-panel" id="whenPanel">
+    <div class="when-title">When to use this wave</div>
+    <div class="when-grid" id="whenGrid">
+      <div class="when-item">
+        <div class="when-time">Select a wave</div>
+        <div class="when-use">Timing guidance will appear here once you choose a frequency state above.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="play-btn" id="playBtn" onclick="togglePlay()">▶ Play Audio</button>
+    <div class="vol-wrap">
+      <span class="vol-label">Vol</span>
+      <input type="range" class="vol-slider" min="0" max="100" value="60" oninput="setVol(this.value)">
+    </div>
+    <div class="timer" id="timer">00:00</div>
+  </div>
+
+  <p class="hp-notice">⊕ use headphones — binaural beats require separate frequencies per ear</p>
+
+</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────
+const WAVES = [
+  {
+    id: 'delta', name: 'Delta', range: [0.5, 4], color: '#4a6fff',
+    baseCarrier: 100,
+    waveFreq: 0.007, amp: 0.88,
+    levels: [
+      { name: 'Repair Sleep', range: [0.5, 1.5], hz: 1, desc: 'The deepest healing zone. At this frequency the body floods with growth hormone, inflammation drops, and the brain undergoes physical repair. You are essentially in a biological maintenance mode. Not something you consciously experience — but what you wake up feeling.' },
+      { name: 'Deep Unconscious', range: [1.5, 2.5], hz: 2, desc: 'The border between sleep and near-death-like stillness. Meditators who access this consciously report experiences of complete ego dissolution — no separation between self and everything. Extremely rare to sustain wakefully. Healing here operates below awareness.' },
+      { name: 'Intuitive Gateway', range: [2.5, 3.5], hz: 3, desc: 'Where deep intuitive knowing lives. Shamanic traditions deliberately induce this range through drumming. The noise of thought is completely absent. What arrives here isn\'t thinking — it\'s knowing. Some report spontaneous insight about long-held problems.' },
+      { name: 'Liminal Edge', range: [3.5, 4], hz: 4, desc: 'The transition zone — Delta bleeding into Theta. You are on the edge of dreaming. Hypnagogic imagery begins here. A powerful state for entering deep meditation intentionally, especially with practice. The bridge downward into total stillness.' },
+    ],
+    when: [
+      { time: 'Before sleep', use: 'Play for 20–30 min as you wind down. Pulls the brain toward deep sleep faster and improves sleep quality throughout the night.' },
+      { time: 'Deep healing sessions', use: 'During rest or body scan meditation when recovering physically or emotionally. Let the body do its repair work consciously.' },
+      { time: 'When emotionally exhausted', use: 'Not for doing — for complete surrender. Lie down, close your eyes, let go of everything.' },
+      { time: 'Avoid when', use: 'Driving, working, or needing alertness. This frequency will make you extremely drowsy.' },
+    ]
+  },
+  {
+    id: 'theta', name: 'Theta', range: [4, 8], color: '#aa44ff',
+    baseCarrier: 200,
+    waveFreq: 0.018, amp: 0.72,
+    levels: [
+      { name: 'Dream Threshold', range: [4, 5], hz: 4.5, desc: 'The hypnagogic zone — that strange space just as you drift toward sleep where images and sounds appear unbidden. Your critical mind is offline. Beliefs, fears and patterns surface here without defenses. Powerful for witnessing what\'s actually running in the background of your psychology.' },
+      { name: 'Subconscious Rewiring', range: [5, 6], hz: 5.5, desc: 'The prime frequency for reprogramming. The brain at this state is like fresh clay — impressionable, receptive, open. This is exactly where your elevated life emotional simulation works best. Whatever you feel vividly at 5–6 Hz gets encoded as emotional memory. This is Hebb\'s rule in its most powerful form.' },
+      { name: 'Creative Download', range: [6, 7], hz: 6.5, desc: 'Artists, writers, and inventors describe breakthrough ideas arriving in exactly this state. It\'s not thinking — it\'s receiving. The prefrontal cortex (your inner critic) is quiet. What emerges comes from a deeper intelligence. Use this before creative work to prime the channel.' },
+      { name: 'Meditative Flow', range: [7, 8], hz: 7.5, desc: 'The upper range of Theta — where deep meditators spend long sessions. Still deeply relaxed but with more access to awareness than the lower range. A sustainable zone for extended practice. The body is calm, the mind is spacious, and time loses its grip.' },
+    ],
+    when: [
+      { time: 'Morning before screen time', use: 'Your brain is naturally in Theta on waking. Don\'t check your phone — play this and do your emotional simulation practice first.' },
+      { time: 'Before creative work', use: '10–15 min of Theta primes the creative channel. Then move into Beta to actually build. The ideas will flow differently.' },
+      { time: 'Meditation / breathwork', use: 'The ideal accompaniment. Theta deepens your practice without effort — you sink faster and stay longer.' },
+      { time: 'Belief reprogramming', use: 'Run your elevated life simulation here. What you feel in Theta gets encoded as real emotional memory.' },
+    ]
+  },
+  {
+    id: 'alpha', name: 'Alpha', range: [8, 14], color: '#00ccaa',
+    baseCarrier: 300,
+    waveFreq: 0.032, amp: 0.55,
+    levels: [
+      { name: 'Relaxed Awareness', range: [8, 9.5], hz: 8.5, desc: 'The bridge out of Theta into waking consciousness. Your eyes open but the sense of spaciousness remains. Stress hormones are low. The inner critic is quiet. This is the default state of people who describe themselves as "naturally calm" — it\'s not personality, it\'s neurology.' },
+      { name: 'Positive Baseline', range: [9.5, 11], hz: 10, desc: '10 Hz is the most studied Alpha frequency and one of the most powerful for mood regulation. Serotonin production peaks here. Cortisol drops. This is the frequency associated with optimism, openness, and the sense that things are generally okay. A powerful daily reset.' },
+      { name: 'Present Moment', range: [11, 12.5], hz: 12, desc: 'Heightened sensory presence. You notice more — the texture of things, the quality of light, the feeling of your own breath. The mind stops churning over past and future and lands in now. Athletes describe this before peak performance. It\'s the feeling of being fully here.' },
+      { name: 'Active Calm', range: [12.5, 14], hz: 13, desc: 'The upper edge of Alpha — calm but alert, the perfect state for learning, absorbing information, or having an important conversation without reactivity. Your nervous system is regulated. You can respond rather than react. This is the emotional baseline you\'re building toward.' },
+    ],
+    when: [
+      { time: 'Morning ritual start', use: 'Open your eyes into Alpha. Play while journaling, setting intentions, or reading something meaningful. Sets the emotional tone for the day.' },
+      { time: 'Mid-day reset', use: 'After intense Beta work — meetings, execution, problem-solving — Alpha is your recovery. Even 10 minutes resets the nervous system.' },
+      { time: 'Before difficult conversations', use: 'Regulate your nervous system before a hard conversation with Anushray or anyone important. You\'ll respond from clarity, not reaction.' },
+      { time: 'Background while working', use: 'The best background frequency for sustained focus work. Enough alertness to perform, enough calm to sustain it.' },
+    ]
+  },
+  {
+    id: 'beta', name: 'Beta', range: [14, 30], color: '#ffaa00',
+    baseCarrier: 400,
+    waveFreq: 0.065, amp: 0.38,
+    levels: [
+      { name: 'Focused Thinking', range: [14, 18], hz: 16, desc: 'The entry point of active cognitive engagement. You\'re alert, processing, connecting ideas. This is the state for learning new skills, solving problems methodically, reading complex material. The mind is engaged but not yet under pressure. Sustainable for long periods.' },
+      { name: 'High Performance', range: [18, 23], hz: 20, desc: 'Where elite performance lives. Athletes, executives, performers in peak moments — their brains are running here. Sharp, decisive, fast. This is the frequency of execution: building, closing, creating momentum. The version of you running your business operates here.' },
+      { name: 'Active Creation', range: [23, 27], hz: 25, desc: 'Intense focused output. Writing fast, coding in flow, building something with full engagement. The mind is almost entirely in the task — background noise of doubt or distraction fades. Powerful for creative sprints. Not sustainable indefinitely — plan a recovery window after.' },
+      { name: 'High Alert', range: [27, 30], hz: 28, desc: 'The upper edge of Beta, bordering on stress activation. Useful in genuine high-stakes moments — a big pitch, a critical deadline. But chronic time here means cortisol, anxiety, and burnout. Use intentionally, not habitually. Your nervous system is not built to live here.' },
+    ],
+    when: [
+      { time: 'Deep work blocks', use: 'Your primary execution state. Use for 90-minute focused work sessions. Build, create, close. Pair with a Theta primer beforehand for best results.' },
+      { time: 'Working out', use: 'High Beta matches the energy of physical training. Amplifies drive, delays fatigue perception, increases output.' },
+      { time: 'Before a pitch or presentation', use: 'Sharp, alert, present. Play for 5–10 min before you need to perform at your highest.' },
+      { time: 'Avoid at night', use: 'Beta after 8pm disrupts sleep onset. It signals wakefulness to the brain. Wind down with Alpha or Theta instead.' },
+    ]
+  },
+  {
+    id: 'gamma', name: 'Gamma', range: [30, 100], color: '#ff4488',
+    baseCarrier: 500,
+    waveFreq: 0.13, amp: 0.26,
+    levels: [
+      { name: 'Cognitive Integration', range: [30, 40], hz: 35, desc: 'The lower range of Gamma is where the brain "binds" — integrates information from different regions into a unified experience. The moment of understanding, of things clicking into place. Researchers call this the neural correlate of insight. Study sessions that end in "I finally get it" moments peak here.' },
+      { name: '40 Hz Healing', range: [40, 45], hz: 40, desc: '40 Hz is the most clinically significant Gamma frequency. Active research at MIT and other institutions shows it may support clearing amyloid plaques, improving memory consolidation, and restoring neural connectivity. Tibetan monks in compassion meditation show sustained 40 Hz. This is both a peak state and a healing one.' },
+      { name: 'Elevated States', range: [45, 60], hz: 50, desc: 'The frequencies associated with what mystics call unity consciousness — the sense that the boundary between self and everything else has become permeable. Not a state you can force or maintain. It arises. But you can create the conditions for it with consistent practice across the lower frequencies.' },
+      { name: 'Peak Perception', range: [60, 100], hz: 80, desc: 'The extreme upper range — documented in highly experienced meditators and in moments of profound awe or insight. The brain is processing reality at maximum speed and integration. Rare, fleeting, and extraordinary when it arrives. Consider this the summit of the mountain the other frequencies are paths toward.' },
+    ],
+    when: [
+      { time: 'After deep meditation', use: 'Gamma often arises naturally after a Theta or Delta session. Let it emerge. Playing Gamma audio at the end of a session can extend the state.' },
+      { time: 'Learning something complex', use: '40 Hz specifically supports memory consolidation and neural binding. Play during or immediately after studying something you want to deeply integrate.' },
+      { time: 'Creative breakthrough sessions', use: 'Not for sustained work — for the specific moment you need a cognitive leap. Short bursts of 10–15 minutes with full presence.' },
+      { time: 'Morning after Delta sleep', use: 'If you\'ve slept deeply, your brain naturally moves through Gamma on waking. Extend this window before it dissolves into ordinary wakefulness.' },
+    ]
+  }
+];
+
+// ── State ────────────────────────────────────────────────────────
+let currentWave = null;
+let currentHz = 0;
+let currentLevel = null;
+let audioCtx = null, leftOsc = null, rightOsc = null, gainNode = null;
+let isPlaying = false;
+let vol = 0.6;
+let elapsed = 0, timerInt = null;
+let waveT = 0, animFrame;
+
+// ── Audio ────────────────────────────────────────────────────────
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  gainNode = audioCtx.createGain();
+  gainNode.gain.value = vol * 0.28;
+  gainNode.connect(audioCtx.destination);
+}
+
+function startAudio(wave, hz) {
+  if (!audioCtx) initAudio();
+  stopAudio();
+  const merger = audioCtx.createChannelMerger(2);
+  merger.connect(gainNode);
+
+  leftOsc = audioCtx.createOscillator();
+  leftOsc.type = 'sine';
+  leftOsc.frequency.value = wave.baseCarrier;
+  const lg = audioCtx.createGain(); lg.gain.value = 1;
+  leftOsc.connect(lg); lg.connect(merger, 0, 0);
+
+  rightOsc = audioCtx.createOscillator();
+  rightOsc.type = 'sine';
+  rightOsc.frequency.value = wave.baseCarrier + hz;
+  const rg = audioCtx.createGain(); rg.gain.value = 1;
+  rightOsc.connect(rg); rg.connect(merger, 0, 1);
+
+  leftOsc.start(); rightOsc.start();
+}
+
+function stopAudio() {
+  [leftOsc, rightOsc].forEach(o => { if (o) { try { o.stop(); } catch(e){} } });
+  leftOsc = rightOsc = null;
+}
+
+function setVol(v) { vol = v / 100; if (gainNode) gainNode.gain.value = vol * 0.28; }
+
+function togglePlay() {
+  if (!currentWave) return;
+  if (isPlaying) {
+    stopAudio(); isPlaying = false;
+    clearInterval(timerInt);
+    document.getElementById('playBtn').textContent = '▶ Play Audio';
+    document.getElementById('playBtn').classList.remove('playing');
+  } else {
+    startAudio(currentWave, currentHz); isPlaying = true;
+    document.getElementById('playBtn').textContent = '■ Stop';
+    document.getElementById('playBtn').classList.add('playing');
+    elapsed = 0;
+    timerInt = setInterval(() => {
+      elapsed++;
+      const m = String(Math.floor(elapsed/60)).padStart(2,'0');
+      const s = String(elapsed%60).padStart(2,'0');
+      document.getElementById('timer').textContent = `${m}:${s}`;
+    }, 1000);
+  }
+}
+
+// ── Build tabs ───────────────────────────────────────────────────
+const tabsEl = document.getElementById('tabs');
+WAVES.forEach(w => {
+  const t = document.createElement('div');
+  t.className = 'tab';
+  t.style.setProperty('--c', w.color);
+  t.innerHTML = `<div class="tab-name">${w.name}</div><div class="tab-range">${w.range[0]}–${w.range[1]} Hz</div>`;
+  t.onclick = () => selectWave(w);
+  tabsEl.appendChild(t);
+});
+
+// ── Select wave ──────────────────────────────────────────────────
+function selectWave(wave) {
+  currentWave = wave;
+
+  // Tabs
+  tabsEl.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', WAVES[i].id === wave.id));
+
+  // Slider
+  const slider = document.getElementById('hzRange');
+  slider.min = wave.range[0];
+  slider.max = wave.range[1];
+  const mid = (wave.range[0] + wave.range[1]) / 2;
+  slider.value = mid;
+
+  // Style slider track
+  slider.style.accentColor = wave.color;
+
+  // Build markers
+  buildMarkers(wave);
+
+  // Update hz
+  updateHz(parseFloat(slider.value), wave);
+
+  // When to use
+  buildWhen(wave);
+
+  // Restart audio
+  if (isPlaying) startAudio(wave, currentHz);
+}
+
+function buildMarkers(wave) {
+  const el = document.getElementById('levelMarkers');
+  el.innerHTML = '';
+  wave.levels.forEach(lv => {
+    const midHz = (lv.range[0] + lv.range[1]) / 2;
+    const m = document.createElement('div');
+    m.className = 'level-marker';
+    m.style.color = wave.color;
+    m.innerHTML = `<div class="marker-tick"></div><div class="marker-hz">${midHz}Hz</div>`;
+    m.onclick = () => {
+      document.getElementById('hzRange').value = midHz;
+      updateHz(midHz, wave);
+    };
+    el.appendChild(m);
+  });
+}
+
+function buildWhen(wave) {
+  const grid = document.getElementById('whenGrid');
+  grid.innerHTML = '';
+  wave.when.forEach(w => {
+    const item = document.createElement('div');
+    item.className = 'when-item';
+    item.style.borderColor = wave.color + '30';
+    item.innerHTML = `<div class="when-time" style="color:${wave.color}">${w.time}</div><div class="when-use">${w.use}</div>`;
+    grid.appendChild(item);
+  });
+}
+
+function updateHz(hz, wave) {
+  wave = wave || currentWave;
+  if (!wave) return;
+  currentHz = hz;
+  const rounded = Math.round(hz * 10) / 10;
+
+  // Find level
+  const lv = wave.levels.find(l => hz >= l.range[0] && hz <= l.range[1]) || wave.levels[0];
+  currentLevel = lv;
+
+  // UI updates
+  document.getElementById('sliderHz').innerHTML = `${rounded}<span> Hz</span>`;
+  document.getElementById('sliderHz').style.color = wave.color;
+  document.getElementById('hzLive').textContent = `${rounded} Hz`;
+  document.getElementById('hzLive').style.color = wave.color;
+
+  const card = document.getElementById('levelCard');
+  card.style.borderColor = wave.color + '40';
+  card.innerHTML = `
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,${wave.color},transparent)"></div>
+    <div class="level-name" style="color:${wave.color}">${lv.name}</div>
+    <div class="level-hz-range-label">${lv.range[0]}–${lv.range[1]} Hz zone</div>
+    <div class="level-desc">${lv.desc}</div>
+  `;
+
+  // Update audio in real time
+  if (isPlaying && rightOsc) {
+    rightOsc.frequency.setTargetAtTime(wave.baseCarrier + hz, audioCtx.currentTime, 0.1);
+  }
+}
+
+// Slider input
+document.getElementById('hzRange').addEventListener('input', function() {
+  if (currentWave) updateHz(parseFloat(this.value), currentWave);
+});
+
+// ── Wave canvas animation ────────────────────────────────────────
+const wc = document.getElementById('waveCanvas');
+const wx = wc.getContext('2d');
+
+function resizeWave() {
+  wc.width = wc.offsetWidth * devicePixelRatio;
+  wc.height = wc.offsetHeight * devicePixelRatio;
+  wx.scale(devicePixelRatio, devicePixelRatio);
+}
+
+function drawWave() {
+  const W = wc.offsetWidth, H = wc.offsetHeight;
+  wx.clearRect(0, 0, W, H);
+
+  const color = currentWave ? currentWave.color : '#2e3e4e';
+  const freq = currentWave ? currentWave.waveFreq : 0.012;
+  const amp = currentWave ? currentWave.amp * (H/2 - 12) : 6;
+
+  // Grid
+  wx.strokeStyle = 'rgba(255,255,255,0.025)';
+  wx.lineWidth = 1;
+  [H*0.25, H*0.5, H*0.75].forEach(y => {
+    wx.beginPath(); wx.moveTo(0, y); wx.lineTo(W, y); wx.stroke();
+  });
+
+  // Main wave
+  wx.shadowBlur = 14;
+  wx.shadowColor = color;
+  wx.strokeStyle = color;
+  wx.lineWidth = 1.8;
+  wx.beginPath();
+  for (let x = 0; x <= W; x += 1.5) {
+    const y = H/2
+      + Math.sin(x * freq * 9 + waveT) * amp
+      + Math.sin(x * freq * 2.5 + waveT * 0.6) * amp * 0.25;
+    x === 0 ? wx.moveTo(x, y) : wx.lineTo(x, y);
+  }
+  wx.stroke();
+  wx.shadowBlur = 0;
+
+  // Ghost wave
+  wx.strokeStyle = color + '25';
+  wx.lineWidth = 1;
+  wx.beginPath();
+  for (let x = 0; x <= W; x += 2) {
+    const y = H/2 + Math.sin(x * freq * 9 + waveT + 1.2) * amp * 0.4;
+    x === 0 ? wx.moveTo(x, y) : wx.lineTo(x, y);
+  }
+  wx.stroke();
+
+  const spd = currentWave ? currentWave.waveFreq * 3.5 : 0.008;
+  waveT += spd;
+  animFrame = requestAnimationFrame(drawWave);
+}
+
+window.addEventListener('resize', resizeWave);
+resizeWave();
+drawWave();
+
+// ── Stars ────────────────────────────────────────────────────────
+const sc = document.getElementById('stars'), sx = sc.getContext('2d');
+let stars = [];
+
+function initStars() {
+  sc.width = window.innerWidth; sc.height = window.innerHeight;
+  stars = Array.from({length: 100}, () => ({
+    x: Math.random() * sc.width,
+    y: Math.random() * sc.height,
+    r: Math.random() * 1.1,
+    a: Math.random() * Math.PI * 2,
+    spd: 0.004 + Math.random() * 0.006
+  }));
+}
+
+function drawStars() {
+  sx.clearRect(0, 0, sc.width, sc.height);
+  stars.forEach(s => {
+    s.a += s.spd;
+    const alpha = (Math.sin(s.a) + 1) / 2 * 0.5 + 0.08;
+    sx.beginPath();
+    sx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    sx.fillStyle = `rgba(180,210,255,${alpha})`;
+    sx.fill();
+  });
+  requestAnimationFrame(drawStars);
+}
+
+window.addEventListener('resize', initStars);
+initStars(); drawStars();
+
+window.addEventListener('beforeunload', () => { stopAudio(); if (audioCtx) audioCtx.close(); });
+</script>
+</body>
+</html>
