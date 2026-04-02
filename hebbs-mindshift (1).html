@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rewire Your Mind</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --cream: #f0e8d5;
+    --muted: #4a4a5a;
+    --pulse: #7b5ea7;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--cream);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+    padding: 2rem 1rem;
+  }
+
+  /* Ambient background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(201,168,76,0.07) 0%, transparent 70%),
+                radial-gradient(ellipse 40% 40% at 80% 80%, rgba(123,94,167,0.06) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 640px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2.5rem;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+  }
+
+  .label {
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 6vw, 3rem);
+    font-weight: 400;
+    color: var(--cream);
+    line-height: 1.1;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--gold-light);
+  }
+
+  .subtitle {
+    margin-top: 0.75rem;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    line-height: 1.7;
+  }
+
+  /* Neural net canvas */
+  .neural-wrap {
+    width: 100%;
+    position: relative;
+    border: 1px solid rgba(201,168,76,0.12);
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: 180px;
+  }
+
+  .neural-label {
+    position: absolute;
+    bottom: 10px;
+    right: 14px;
+    font-size: 0.58rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  /* Thought cards */
+  .thought-section {
+    width: 100%;
+  }
+
+  .section-title {
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  .thought-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .thought-card {
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  .thought-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(201,168,76,0.08), transparent);
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+
+  .thought-card:hover::before { opacity: 1; }
+
+  .thought-card:hover {
+    border-color: rgba(201,168,76,0.3);
+    transform: translateY(-2px);
+  }
+
+  .thought-card.fired {
+    border-color: var(--gold);
+    animation: fire-pulse 0.5s ease-out;
+  }
+
+  @keyframes fire-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(201,168,76,0.5); }
+    50% { box-shadow: 0 0 20px 8px rgba(201,168,76,0.2); }
+    100% { box-shadow: 0 0 0 0 rgba(201,168,76,0); }
+  }
+
+  .thought-icon {
+    font-size: 1.4rem;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  .thought-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.85rem;
+    color: var(--cream);
+    line-height: 1.4;
+    font-style: italic;
+  }
+
+  .thought-count {
+    margin-top: 0.5rem;
+    font-size: 0.58rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .thought-bar {
+    margin-top: 0.4rem;
+    height: 2px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .thought-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    border-radius: 2px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  /* Affirmation display */
+  .affirmation-box {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 4px;
+    padding: 1.5rem;
+    text-align: center;
+    min-height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .affirmation-box::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  .affirmation-text {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1rem, 3vw, 1.3rem);
+    color: var(--gold-light);
+    line-height: 1.5;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.5s ease;
+  }
+
+  .affirmation-text.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Streak + stats */
+  .stats-row {
+    width: 100%;
+    display: flex;
+    gap: 1rem;
+  }
+
+  .stat-box {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 4px;
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .stat-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-top: 0.3rem;
+  }
+
+  /* Breathe prompt */
+  .breathe {
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+    animation: breathe-fade 4s ease-in-out infinite;
+  }
+
+  @keyframes breathe-fade {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.8; }
+  }
+
+  /* Ripple */
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    width: 10px; height: 10px;
+    background: rgba(201,168,76,0.4);
+    transform: scale(0);
+    animation: ripple-out 0.6s ease-out forwards;
+    pointer-events: none;
+  }
+
+  @keyframes ripple-out {
+    to { transform: scale(18); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <p class="label">Hebb's Rule Simulation</p>
+    <h1>Neurons that fire<br>together, <em>wire together</em></h1>
+    <p class="subtitle">Each click fires a neural pathway. Repeat a thought<br>enough times and the brain builds a highway for it.</p>
+  </div>
+
+  <div class="neural-wrap">
+    <canvas id="neural"></canvas>
+    <span class="neural-label">live pathway activity</span>
+  </div>
+
+  <div class="thought-section">
+    <p class="section-title">Choose a thought to fire</p>
+    <div class="thought-grid" id="thoughtGrid"></div>
+  </div>
+
+  <div class="affirmation-box">
+    <p class="affirmation-text" id="affirmation">Click a thought above to begin rewiring.</p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-box">
+      <div class="stat-number" id="totalFires">0</div>
+      <div class="stat-label">Total Firings</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-number" id="strongestCount">0</div>
+      <div class="stat-label">Strongest Path</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-number" id="streakCount">0</div>
+      <div class="stat-label">Current Streak</div>
+    </div>
+  </div>
+
+  <p class="breathe" id="breathePrompt">breathe in · hold · breathe out</p>
+
+</div>
+
+<script>
+// --- Data ---
+const thoughts = [
+  {
+    icon: '🌱',
+    text: 'I am growing through everything I face',
+    responses: [
+      'Every challenge is fertilizer for your growth.',
+      'Your struggles are sculpting something remarkable.',
+      'Growth is happening, even when invisible.'
+    ]
+  },
+  {
+    icon: '🔥',
+    text: 'I have energy and capacity for what matters',
+    responses: [
+      'Your energy is renewable. You can begin again.',
+      'The capacity you need is already inside you.',
+      'Focus is the highest form of energy.'
+    ]
+  },
+  {
+    icon: '🧠',
+    text: 'My mind adapts and learns with every experience',
+    responses: [
+      'Neuroplasticity is real — your brain is literally changing.',
+      'Every thought you choose reshapes your neural landscape.',
+      'You are not fixed. You are always becoming.'
+    ]
+  },
+  {
+    icon: '☀️',
+    text: 'Good things are unfolding even when I can\'t see them',
+    responses: [
+      'The sun doesn\'t stop existing behind the clouds.',
+      'Some of your best chapters haven\'t been written yet.',
+      'Trust the process happening beneath the surface.'
+    ]
+  },
+  {
+    icon: '💪',
+    text: 'I\'ve overcome hard things before — I can again',
+    responses: [
+      'Your history of resilience is your greatest evidence.',
+      'You have a 100% track record of surviving hard days.',
+      'The past proves you\'re more capable than you feel right now.'
+    ]
+  },
+  {
+    icon: '🌊',
+    text: 'I release what I can\'t control and focus on what I can',
+    responses: [
+      'Peace begins where control attempts end.',
+      'What you water grows. Choose wisely.',
+      'Surrender is not weakness — it\'s precision.'
+    ]
+  }
+];
+
+// --- State ---
+let counts = new Array(thoughts.length).fill(0);
+let totalFires = 0;
+let streak = 0;
+let lastFired = -1;
+
+// --- Build cards ---
+const grid = document.getElementById('thoughtGrid');
+thoughts.forEach((t, i) => {
+  const card = document.createElement('div');
+  card.className = 'thought-card';
+  card.innerHTML = `
+    <span class="thought-icon">${t.icon}</span>
+    <p class="thought-text">${t.text}</p>
+    <p class="thought-count" id="count-${i}">fired 0×</p>
+    <div class="thought-bar"><div class="thought-bar-fill" id="bar-${i}"></div></div>
+  `;
+  card.addEventListener('click', (e) => fireThought(i, e));
+  grid.appendChild(card);
+});
+
+function fireThought(i, e) {
+  counts[i]++;
+  totalFires++;
+  streak = (lastFired === i) ? streak + 1 : 1;
+  lastFired = i;
+
+  // Update card
+  const cards = grid.querySelectorAll('.thought-card');
+  cards.forEach(c => c.classList.remove('fired'));
+  cards[i].classList.add('fired');
+
+  // Ripple
+  const rect = cards[i].getBoundingClientRect();
+  const ripple = document.createElement('span');
+  ripple.className = 'ripple';
+  ripple.style.left = (e.clientX - rect.left - 5) + 'px';
+  ripple.style.top = (e.clientY - rect.top - 5) + 'px';
+  cards[i].appendChild(ripple);
+  setTimeout(() => ripple.remove(), 700);
+
+  // Count + bar
+  document.getElementById(`count-${i}`).textContent = `fired ${counts[i]}×`;
+  const maxCount = Math.max(...counts);
+  counts.forEach((c, idx) => {
+    document.getElementById(`bar-${idx}`).style.width = maxCount > 0 ? (c / maxCount * 100) + '%' : '0%';
+  });
+
+  // Affirmation
+  const affEl = document.getElementById('affirmation');
+  affEl.classList.remove('visible');
+  setTimeout(() => {
+    const responses = thoughts[i].responses;
+    affEl.textContent = responses[counts[i] % responses.length];
+    affEl.classList.add('visible');
+  }, 200);
+
+  // Stats
+  document.getElementById('totalFires').textContent = totalFires;
+  document.getElementById('strongestCount').textContent = Math.max(...counts);
+  document.getElementById('streakCount').textContent = streak;
+
+  // Fire neural
+  triggerNeural(i);
+}
+
+// Show initial affirmation
+setTimeout(() => {
+  document.getElementById('affirmation').classList.add('visible');
+}, 300);
+
+// --- Neural canvas ---
+const canvas = document.getElementById('neural');
+const ctx = canvas.getContext('2d');
+let nodes = [];
+let connections = [];
+let particles = [];
+let animFrame;
+
+function resizeCanvas() {
+  canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+  canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  initNodes();
+}
+
+function initNodes() {
+  const W = canvas.offsetWidth;
+  const H = canvas.offsetHeight;
+  nodes = [];
+  for (let i = 0; i < 28; i++) {
+    nodes.push({
+      x: 20 + Math.random() * (W - 40),
+      y: 10 + Math.random() * (H - 20),
+      r: 2 + Math.random() * 2,
+      glow: 0,
+      baseAlpha: 0.15 + Math.random() * 0.2
+    });
+  }
+  connections = [];
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const dx = nodes[i].x - nodes[j].x;
+      const dy = nodes[i].y - nodes[j].y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 120) {
+        connections.push({ a: i, b: j, strength: 0, dist });
+      }
+    }
+  }
+}
+
+function triggerNeural(thoughtIndex) {
+  // pick random subset of connections to pulse
+  const toFire = connections.sort(() => Math.random() - 0.5).slice(0, 8 + thoughtIndex * 2);
+  toFire.forEach(conn => {
+    conn.strength = Math.min(1, conn.strength + 0.4);
+    // add a particle
+    const nodeA = nodes[conn.a];
+    const nodeB = nodes[conn.b];
+    particles.push({
+      x: nodeA.x, y: nodeA.y,
+      tx: nodeB.x, ty: nodeB.y,
+      t: 0, speed: 0.015 + Math.random() * 0.02,
+      color: `rgba(201,168,76,`
+    });
+    nodes[conn.a].glow = 1;
+    nodes[conn.b].glow = 1;
+  });
+}
+
+function drawNeural() {
+  const W = canvas.offsetWidth;
+  const H = canvas.offsetHeight;
+  ctx.clearRect(0, 0, W, H);
+
+  // connections
+  connections.forEach(conn => {
+    conn.strength *= 0.97;
+    const alpha = 0.04 + conn.strength * 0.3;
+    ctx.beginPath();
+    ctx.moveTo(nodes[conn.a].x, nodes[conn.a].y);
+    ctx.lineTo(nodes[conn.b].x, nodes[conn.b].y);
+    ctx.strokeStyle = `rgba(201,168,76,${alpha})`;
+    ctx.lineWidth = 0.5 + conn.strength * 1.5;
+    ctx.stroke();
+  });
+
+  // particles
+  particles = particles.filter(p => p.t < 1);
+  particles.forEach(p => {
+    p.t += p.speed;
+    const x = p.x + (p.tx - p.x) * p.t;
+    const y = p.y + (p.ty - p.y) * p.t;
+    const alpha = 1 - p.t;
+    ctx.beginPath();
+    ctx.arc(x, y, 2, 0, Math.PI * 2);
+    ctx.fillStyle = p.color + alpha + ')';
+    ctx.fill();
+  });
+
+  // nodes
+  nodes.forEach(n => {
+    n.glow *= 0.94;
+    const alpha = n.baseAlpha + n.glow * 0.6;
+    if (n.glow > 0.05) {
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r * 3, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(201,168,76,${n.glow * 0.15})`;
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(201,168,76,${alpha})`;
+    ctx.fill();
+  });
+
+  animFrame = requestAnimationFrame(drawNeural);
+}
+
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+drawNeural();
+</script>
+</body>
+</html>

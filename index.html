@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aashna's Sacred Space</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #06060c;
+  --surface: #0d0d18;
+  --gold: #c9a84c;
+  --gold-light: #e8c97a;
+  --gold-dim: rgba(201,168,76,0.15);
+  --cream: #f0e8d5;
+  --muted: #3a3a4a;
+  --dim: #5a5a6e;
+  --ocean: #4a8fa0;
+}
+
+html, body { height: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--cream);
+  font-family: 'Jost', sans-serif;
+  font-weight: 300;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Starfield ── */
+#stars {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ── Ambient glow ── */
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% -10%, rgba(201,168,76,0.06) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 40% at 15% 80%, rgba(74,143,160,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 30% 30% at 85% 70%, rgba(123,94,167,0.04) 0%, transparent 55%);
+}
+
+/* ── Layout ── */
+.wrap {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 1.5rem 5rem;
+}
+
+/* ── Header ── */
+.header {
+  text-align: center;
+  padding: 4rem 1rem 3rem;
+  width: 100%;
+  max-width: 700px;
+}
+
+.header-eyebrow {
+  font-size: 0.58rem;
+  letter-spacing: 0.4em;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+  opacity: 0;
+  animation: fadeUp 0.9s ease 0.2s forwards;
+}
+
+.header h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2.4rem, 7vw, 4rem);
+  font-weight: 300;
+  line-height: 1.1;
+  color: var(--cream);
+  margin-bottom: 1rem;
+  opacity: 0;
+  animation: fadeUp 0.9s ease 0.4s forwards;
+}
+
+.header h1 em {
+  font-style: italic;
+  color: var(--gold-light);
+}
+
+.header-sub {
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  color: var(--dim);
+  line-height: 2;
+  opacity: 0;
+  animation: fadeUp 0.9s ease 0.6s forwards;
+}
+
+/* ── Divider ── */
+.divider {
+  width: 100%;
+  max-width: 500px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201,168,76,0.25), transparent);
+  margin: 0 auto 3rem;
+  opacity: 0;
+  animation: fadeUp 0.9s ease 0.7s forwards;
+}
+
+/* ── Card grid ── */
+.grid {
+  width: 100%;
+  max-width: 860px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.2rem;
+}
+
+/* ── Card ── */
+.card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid rgba(255,255,255,0.055);
+  border-radius: 4px;
+  padding: 2rem 1.8rem;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow: hidden;
+  transition: transform 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+  opacity: 0;
+}
+
+.card:nth-child(1) { animation: fadeUp 0.9s ease 0.8s forwards; }
+.card:nth-child(2) { animation: fadeUp 0.9s ease 0.95s forwards; }
+.card:nth-child(3) { animation: fadeUp 0.9s ease 1.1s forwards; }
+.card:nth-child(4) { animation: fadeUp 0.9s ease 1.25s forwards; }
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  border-color: var(--card-accent, rgba(201,168,76,0.35));
+  box-shadow: 0 20px 50px rgba(0,0,0,0.4), 0 0 30px var(--card-glow, rgba(201,168,76,0.06));
+}
+
+.card:hover::before { opacity: 1; }
+
+/* Card accent line top */
+.card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--card-accent, rgba(201,168,76,0.5)), transparent);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.card:hover::after { opacity: 1; }
+
+/* Card variants */
+.card-brainwave {
+  --card-accent: rgba(74,143,160,0.5);
+  --card-glow: rgba(74,143,160,0.08);
+}
+.card-brainwave::before {
+  background: linear-gradient(135deg, rgba(74,143,160,0.05), transparent 60%);
+}
+
+.card-elevated {
+  --card-accent: rgba(124,167,184,0.5);
+  --card-glow: rgba(124,167,184,0.08);
+}
+.card-elevated::before {
+  background: linear-gradient(135deg, rgba(196,124,62,0.06), transparent 60%);
+}
+
+.card-hebb {
+  --card-accent: rgba(201,168,76,0.5);
+  --card-glow: rgba(201,168,76,0.08);
+}
+.card-hebb::before {
+  background: linear-gradient(135deg, rgba(201,168,76,0.06), transparent 60%);
+}
+
+.card-placeholder {
+  --card-accent: rgba(123,94,167,0.4);
+  --card-glow: rgba(123,94,167,0.06);
+  border-style: dashed;
+  border-color: rgba(255,255,255,0.08);
+  cursor: default;
+}
+.card-placeholder::before {
+  background: linear-gradient(135deg, rgba(123,94,167,0.04), transparent 60%);
+}
+
+/* Card icon */
+.card-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+  filter: grayscale(0.2);
+}
+
+/* Card tag */
+.card-tag {
+  font-size: 0.52rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--card-color, var(--dim));
+  margin-bottom: -0.25rem;
+}
+
+.card-brainwave .card-tag { color: #4a8fa0; }
+.card-elevated .card-tag { color: #c47c3e; }
+.card-hebb .card-tag { color: var(--gold); }
+.card-placeholder .card-tag { color: #7b5ea7; }
+
+/* Card title */
+.card-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.5rem;
+  font-weight: 300;
+  line-height: 1.2;
+  color: var(--cream);
+}
+
+.card-title em {
+  font-style: italic;
+}
+
+/* Card desc */
+.card-desc {
+  font-size: 0.72rem;
+  color: var(--dim);
+  line-height: 1.8;
+  flex: 1;
+}
+
+/* Card cta */
+.card-cta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--dim);
+  transition: color 0.3s, gap 0.3s;
+  margin-top: 0.5rem;
+}
+
+.card:hover .card-cta {
+  color: var(--cream);
+  gap: 0.75rem;
+}
+
+.card-placeholder .card-cta { color: rgba(123,94,167,0.4); }
+
+.cta-arrow {
+  font-size: 0.8rem;
+  transition: transform 0.3s;
+}
+.card:hover .cta-arrow { transform: translateX(3px); }
+
+/* ── Footer ── */
+.footer {
+  margin-top: 5rem;
+  text-align: center;
+  opacity: 0;
+  animation: fadeUp 0.9s ease 1.4s forwards;
+}
+
+.footer-text {
+  font-size: 0.58rem;
+  letter-spacing: 0.25em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.breathe-line {
+  margin-top: 0.75rem;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.9rem;
+  font-style: italic;
+  color: rgba(201,168,76,0.3);
+  animation: breathe 5s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+
+<canvas id="stars"></canvas>
+<div class="ambient"></div>
+
+<div class="wrap">
+
+  <header class="header">
+    <p class="header-eyebrow">Your sacred reference space</p>
+    <h1>A mind that knows<br>what it's <em>becoming</em></h1>
+    <p class="header-sub">Practice tools · Consciousness maps · Emotional embodiment</p>
+  </header>
+
+  <div class="divider"></div>
+
+  <div class="grid">
+
+    <!-- Brainwave Portal -->
+    <a class="card card-brainwave" href="brainwave-portal-v2.html">
+      <span class="card-icon">🌊</span>
+      <span class="card-tag">Neuroscience</span>
+      <h2 class="card-title">Brainwave<br><em>Portal</em></h2>
+      <p class="card-desc">Navigate Delta through Gamma. Binaural tones, live waveforms, and precise guidance on when to use each state in your daily arc.</p>
+      <div class="card-cta">Enter <span class="cta-arrow">→</span></div>
+    </a>
+
+    <!-- Elevated Life -->
+    <a class="card card-elevated" href="elevated-life.html">
+      <span class="card-icon">🌅</span>
+      <span class="card-tag">Manifestation</span>
+      <h2 class="card-title">The Elevated<br><em>Life</em></h2>
+      <p class="card-desc">Walk through a day that is already yours — emotionally, sensorially. Pure felt-sense embodiment from dawn to night by the ocean.</p>
+      <div class="card-cta">Enter <span class="cta-arrow">→</span></div>
+    </a>
+
+    <!-- Hebb's MindShift -->
+    <a class="card card-hebb" href="hebbs-mindshift.html">
+      <span class="card-icon">🧠</span>
+      <span class="card-tag">Neural Rewiring</span>
+      <h2 class="card-title">Hebb's<br><em>MindShift</em></h2>
+      <p class="card-desc">Fire and wire. An interactive simulation of Hebb's rule — choose a thought, click to fire the pathway, and watch your neural landscape shift.</p>
+      <div class="card-cta">Enter <span class="cta-arrow">→</span></div>
+    </a>
+
+    <!-- Placeholder -->
+    <div class="card card-placeholder">
+      <span class="card-icon" style="opacity:0.3">✦</span>
+      <span class="card-tag">Coming soon</span>
+      <h2 class="card-title" style="opacity:0.3">Your next<br><em>tool</em></h2>
+      <p class="card-desc" style="color:rgba(90,90,110,0.6)">Drop a new HTML file in this folder and add a card above. Expanding your space is always one step away.</p>
+      <div class="card-cta" style="color:rgba(123,94,167,0.3)">Add yours <span class="cta-arrow">+</span></div>
+    </div>
+
+  </div>
+
+  <footer class="footer">
+    <p class="footer-text">Your practice · Your tools · Your becoming</p>
+    <p class="breathe-line">inhale · hold · exhale · return</p>
+  </footer>
+
+</div>
+
+<script>
+// ── Stars ──────────────────────────────────────────────────────────
+const sc = document.getElementById('stars');
+const sx = sc.getContext('2d');
+let stars = [];
+
+function initStars() {
+  sc.width = window.innerWidth;
+  sc.height = window.innerHeight;
+  stars = Array.from({ length: 120 }, () => ({
+    x: Math.random() * sc.width,
+    y: Math.random() * sc.height,
+    r: Math.random() * 1.2,
+    a: Math.random() * Math.PI * 2,
+    spd: 0.003 + Math.random() * 0.005
+  }));
+}
+
+function drawStars() {
+  sx.clearRect(0, 0, sc.width, sc.height);
+  stars.forEach(s => {
+    s.a += s.spd;
+    const alpha = (Math.sin(s.a) + 1) / 2 * 0.45 + 0.05;
+    sx.beginPath();
+    sx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    sx.fillStyle = `rgba(200,220,255,${alpha})`;
+    sx.fill();
+  });
+  requestAnimationFrame(drawStars);
+}
+
+window.addEventListener('resize', initStars);
+initStars();
+drawStars();
+</script>
+
+</body>
+</html>
